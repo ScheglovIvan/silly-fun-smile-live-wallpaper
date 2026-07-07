@@ -1,0 +1,87 @@
+workflows:
+  ios-native-quick-start:
+    name: iOS Native
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: TrimvoApiKey
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.batteam.sillyfunsmilelivewallpaper
+      vars:
+        BUNDLE_ID: "com.batteam.sillyfunsmilelivewallpaper"
+        XCODE_PROJECT: "ios/Runner.xcodeproj"
+        XCODE_WORKSPACE: "ios/Runner.xcworkspace"
+        XCODE_SCHEME: "Runner"
+        APP_STORE_APPLE_ID: 6776281462
+      flutter: 3.19.6
+      xcode: latest
+    scripts:
+      - name: Clean Derived Data
+        script: |
+          rm -rf ~/Library/Developer/Xcode/DerivedData
+
+      - name: Flutter pub get
+        script: |
+          flutter pub get
+
+      - name: Pod install
+        script: |
+          cd $CM_BUILD_DIR/ios
+          pod install
+
+      - name: Set up provisioning profiles settings on Xcode project
+        script: xcode-project use-profiles
+
+      - name: Fix Package.resolved if corrupted
+        script: |
+          if [ -f "$CM_BUILD_DIR/$XCODE_PROJECT/project.xcworkspace/xcshareddata/swiftpm/Package.resolved" ]; then
+            rm "$CM_BUILD_DIR/$XCODE_PROJECT/project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+          fi
+          xcodebuild -resolvePackageDependencies -project "$CM_BUILD_DIR/$XCODE_PROJECT" \
+                     -scheme "$XCODE_SCHEME"
+
+#      - name: Generate Core Data Files
+#        script: |
+#          xcodebuild -project "$CM_BUILD_DIR/$XCODE_PROJECT" \
+#                     -scheme "$XCODE_SCHEME" \
+#                     -sdk iphonesimulator \
+#                     -destination 'platform=iOS Simulator,name=iPhone 14' \
+#                     -dry-run \
+#                     -showBuildSettings
+
+      - name: Increment build number
+        script: |
+          cd $CM_BUILD_DIR/ios
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo "0")
+          LATEST_BUILD_NUMBER=${LATEST_BUILD_NUMBER:-0}
+          NEW_BUILD_NUMBER=$(($LATEST_BUILD_NUMBER + 1))
+          agvtool new-version -all $NEW_BUILD_NUMBER
+
+      - name: Build ipa for distribution
+        script: |
+          flutter build ios --release --no-codesign
+          xcode-project build-ipa \
+            --workspace "$CM_BUILD_DIR/$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
+    publishing:
+      email:
+        recipients:
+          - milan@batteam.store
+        notify:
+          success: true
+          failure: true
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - TEST
+        submit_to_app_store: false
