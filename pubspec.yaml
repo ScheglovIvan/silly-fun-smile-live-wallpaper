@@ -1,0 +1,57 @@
+name: silly_smiles
+description: "Silly Fun Smile Live Wallpaper — dark-themed live & 4K wallpaper gallery."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  # Cross-platform (mobile + web) HTTP client used to fetch the remote CDN
+  # wallpaper catalog manifest.
+  http: ^1.2.0
+  # On-device key/value storage for the local Favourites & History collections
+  # (browser localStorage on the web preview, NSUserDefaults / SharedPreferences
+  # on device).
+  shared_preferences: ^2.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    # Bundled fallback wallpaper thumbnails used by the seed catalog when the
+    # remote CDN manifest is unreachable (offline / web preview).
+    - assets/media/
+
+  fonts:
+    # Display / logo family used for the "SILLY SMILES" wordmark.
+    - family: Future Edge
+      fonts:
+        - asset: assets/fonts/FutureEdge.ttf
+        - asset: assets/fonts/FutureEdge-Italic.ttf
+          style: italic
+    # Primary UI / body family — set as ThemeData.fontFamily so every screen
+    # inherits it.
+    - family: Urbanist
+      fonts:
+        - asset: assets/fonts/Urbanist-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Urbanist-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Urbanist-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Urbanist-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Urbanist-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Urbanist-Black.ttf
+          weight: 900
